@@ -17,5 +17,5 @@ https://github.com/user-attachments/assets/44093f98-3e9d-45fc-87b1-126c255111b7
 
 4. After checking and editing the text, you can reset it with the button "Reset"
 
-https://github.com/KoshaAnastasiia/Grammar_Spelling_Check/assets/118916073/67d36414-de03-4803-ab20-6486370a2cbb
+https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
 
