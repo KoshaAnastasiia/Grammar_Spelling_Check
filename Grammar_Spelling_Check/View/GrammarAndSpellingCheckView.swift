@@ -8,20 +8,39 @@
 import SwiftUI
 
 struct GrammarAndSpellingCheckView: View {
-    @State private var inputText: NSAttributedString = NSAttributedString("")
-    @State private var textHeight: CGFloat = .zero
-    @StateObject var dataViewModel = GrammarAndSpellingViewModel.shared
+    @State private var inputText = NSMutableAttributedString(string: "")
+    @State var position: NSRange?
+
+    @State private var grammarSpelling: GrammarAndSpellingData?
+    @State private var selectedError: GrammarAndSpellingData.Error?
     
-    @State private var isTextCheck: Bool = false
-    @State private var selectedError: GrammarAndSpellingElement.Error?
-    
-    @State @MainActor
-    private var errorsArray: [GrammarAndSpellingData.Error] = []
+    @State private var errorsArray: [GrammarAndSpellingData.Error] = []
+    @State private var isChecked: IsTextCheck = IsTextCheck.check
+    @State private var preferredWords: [String] = []
+    @State private var loading = false
+
+    private struct TextUpdate {
+        let range: NSRange
+        let updateWith: String
+        let text: String
+    }
+
+    @State private var pendingTextUpdates: [TextUpdate] = []
+
+    private enum IsTextCheck {
+        case check
+        case checking
+        case checked
+    }
     
     var body: some View {
         VStack {
             ScrollView {
-                AttributedTextEditor(text: $inputText, height: $textHeight)
+                AttributedTextEditor(text: $inputText,
+                                     position: $position,
+                                     replaceText: { (range, text) in
+                    pendingTextUpdates.append(.init(range: range, updateWith: text, text: inputText.string))
+                })
                     .padding(.all, 20)
                     .frame(height: 500)
                     .cornerRadius(16)
@@ -29,31 +48,28 @@ struct GrammarAndSpellingCheckView: View {
                     .padding(.horizontal, 24)
             }
             Spacer()
-            if isTextCheck {
-                Button(action: resetTextAction,
+            HStack {
+                Spacer()
+                Button(action: buttonAction,
                        label: {
-                    Text("Reset")
-                })
-            } else {
-                Button(action: checkTextAction,
-                       label: {
-                    Text("Check")
-                })
-                .padding(.horizontal, 8)
-                .frame(height: 44)
-                .foregroundColor(.black)
-                .background(.gray)
-                .cornerRadius(8)
+                    GrammarSpellingLabel(image: buttonImage(),
+                                         text: buttonName(),
+                                         isColored: true,
+                                         isOverlayed: true)
+                }).opacity(isChecked == .checked ? 0.5 : 1)
+                    .padding(.horizontal, 8)
+                    
             }
-            
         }
         .background(.white)
-        .onChange(of: dataViewModel.data, { oldValue, newValue in
+        .onChange(of: grammarSpelling) { _, _ in
             modifyText()
-        })
-        .onChange(of: inputText, { oldValue, newValue in
-            modifyText()
-        })
+        }
+        .onChange(of: inputText) { _, _ in
+            if !chooseUpdate() {
+                inputText = inputText.string.hilightedText(errors: errorsArray)
+            }
+        }
         .onOpenURL { errorURL in
             print("error url: \(errorURL)")
             handleError(errorURL)
@@ -65,51 +81,128 @@ struct GrammarAndSpellingCheckView: View {
         }
     }
     
+    private func chooseUpdate() -> Bool {
+        defer {
+            pendingTextUpdates = []
+        }
+        guard let valid = pendingTextUpdates.first (where: {
+            $0.text.count - $0.range.length + $0.updateWith.count == inputText.string.count
+        }) else {
+            return false
+        }
+        makeUpdate(pendingTextUpdate: valid)
+        return true
+    }
+    
+    private func makeUpdate(pendingTextUpdate: TextUpdate) {
+        let delta = pendingTextUpdate.updateWith.count - pendingTextUpdate.range.length
+        errorsArray = errorsArray.compactMap {
+            if $0.offset + $0.length < pendingTextUpdate.range.location {
+                return $0
+            }
+            if pendingTextUpdate.range.location + pendingTextUpdate.range.length < $0.offset {
+                return $0.offset(by: delta)
+            }
+            var errorRange = NSRange(location: $0.offset, length: $0.length)
+            guard let intersection = pendingTextUpdate.range.intersection(errorRange) else {
+                return $0
+            }
+            if intersection.upperBound == errorRange.upperBound {
+                errorRange.length = intersection.lowerBound - errorRange.lowerBound
+            }
+            if intersection.lowerBound == errorRange.lowerBound {
+                errorRange.location = pendingTextUpdate.range.lowerBound
+                errorRange.length = errorRange.length - intersection.length
+                
+            }
+            return $0.applying(range: errorRange)
+        }
+    }
+    
+    
+    private func buttonImage() -> String {
+        switch isChecked {
+        case .check: return "lasso.and.sparkles"
+        case .checking: return "slowmo"
+        case .checked: return "checkmark"
+        }
+    }
+    
+    private func buttonName() -> LocalizedStringKey {
+        switch isChecked {
+        case .check: return "Check"
+        case .checking: return "Checking"
+        case .checked: return "Reset"
+        }
+    }
+    
+    private func buttonAction() {
+        switch isChecked {
+        case .check: checkTextAction()
+        case .checking: return
+        case .checked: resetTextAction()
+        }
+    }
+    
     private func handleError(_ url: URL) {
-        guard url.scheme == "checkapp" else {
+        guard url.scheme == "check" else {
             return
         }
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
-            print("Invalid URL")
             return
         }
         
         guard let action = components.host, action == "openError" else {
-            print("Unknown URL, we can't handle this one!")
             return
         }
         
         guard let error = components.queryItems?.first(where: { $0.name == "id" })?.value else {
-            print("Grammar error not found")
             return
         }
         selectedError = errorsArray.first(where: {
             $0.id == error
         })
-        
     }
     
     private func checkTextAction() {
         Task {
-            await dataViewModel.getGrammarCheckRequest(requestText: inputText.string)
-            errorsArray = dataViewModel.data?.response.errors ?? []
+            isChecked = IsTextCheck.checking
+            grammarSpelling = await getGrammarCheckRequest(requestText: inputText.string)
+            errorsArray = grammarSpelling?.response.errors ?? []
+            isChecked = IsTextCheck.checked
         }
-        isTextCheck = true
     }
     
     private func resetTextAction() {
+        isChecked = IsTextCheck.check
         errorsArray = []
-        inputText = NSAttributedString("")
-        dataViewModel.data = nil
-        isTextCheck = false
+        grammarSpelling = nil
+        inputText = NSMutableAttributedString(string: "")
     }
     
     private func modifyText() {
-        inputText = Self.hilightedText(text: inputText.string, errors: errorsArray)
+        inputText = inputText.string.hilightedText(errors: errorsArray)
     }
-        
-    private static func hilightedText(text: String, errors: [GrammarAndSpellingData.Error]) -> NSAttributedString {
-        let attributedString = NSMutableAttributedString(string: text, attributes: [.font: UIFont.systemFont(ofSize: 16),.foregroundColor:  UIColor.black])
+    
+    private func getGrammarCheckRequest(requestText: String) async -> GrammarAndSpellingData? {
+        do {
+            return try await APIService().checkGrammarAndSpelling(text: requestText)
+        } catch {
+            debugPrint(String(describing: error))
+            return nil
+        }
+    }
+}
+
+#Preview {
+    GrammarAndSpellingCheckView()
+}
+
+extension String {
+    func hilightedText(errors: [GrammarAndSpellingData.Error]) -> NSMutableAttributedString {
+        let attributedString = NSMutableAttributedString(string: self,
+                                                         attributes: [.font: UIFont.systemFont(ofSize: 16),
+                                                                      .foregroundColor:  UIColor.black])
         errors
             .forEach { error in
                 let color: UIColor
@@ -123,12 +216,8 @@ struct GrammarAndSpellingCheckView: View {
                 let link = error.id
                 let range = NSRange(location: error.offset, length: error.length)
                 attributedString.addAttribute(.backgroundColor, value: color, range: range)
-                attributedString.addAttribute(.link, value: String(format: "checkapp://openError?id=%@", link), range: range)
+                attributedString.addAttribute(.link, value: String(format: "check://openError?id=%@", link), range: range)
             }
-        return attributedString as NSAttributedString
+        return attributedString as NSMutableAttributedString
     }
-}
-
-#Preview {
-    GrammarAndSpellingCheckView()
 }

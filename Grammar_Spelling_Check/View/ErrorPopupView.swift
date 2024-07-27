@@ -8,13 +8,11 @@
 import SwiftUI
 
 struct ErrorPopupView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) private var dismiss
     var error: GrammarAndSpellingData.Error
-    @Binding var inputText: NSAttributedString
-    @Binding @MainActor var errorsArray: [GrammarAndSpellingData.Error]
-
+    @Binding var inputText: NSMutableAttributedString
+    @Binding var errorsArray: [GrammarAndSpellingData.Error]
     @State private var selectedError: String?
-    
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -92,7 +90,7 @@ struct ErrorPopupView: View {
                 if $0.offset < error.offset {
                     return $0
                 }
-                return GrammarAndSpellingElement.Error(
+                return GrammarAndSpellingData.Error(
                     bad: $0.bad,
                     better: $0.better,
                     description: $0.description,
