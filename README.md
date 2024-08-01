@@ -3,7 +3,7 @@
 # Description of the application
 / Описание работы приложения /
 
-Checking grammar and spelling with identifying errors and options for replacing incorrect words 
+# Checking grammar and spelling with identifying errors and options for replacing incorrect words
 / Проверка грамматики и орфографии с выявлением ошибок и вариантов замены неправильных слов. /
 
 # 1. Add text for checking in text field, tab button "Check". Grammar mistakes will be highlighted with pink colour, spelling - blue.
@@ -36,7 +36,9 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
 
    # Solution:
    / Решение /
-     Similar to Deeplink mechanism, which has expansion capabilities. / Подобие Deeplink механизма, который имеет возможности расширения.
+   
+     Similar to Deeplink mechanism, which has expansion capabilities. 
+     / Подобие Deeplink механизма, который имеет возможности расширения. /
    
   #  - Marking: 
   / Разметка /
