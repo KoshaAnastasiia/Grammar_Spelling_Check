@@ -7,8 +7,6 @@
 
 import Foundation
 
-//typealias GrammarAndSpellingData = GrammarAndSpellingElement
-
 struct GrammarAndSpellingData: Codable, Hashable {
     
     struct Description: Codable, Hashable {
@@ -38,6 +36,12 @@ extension GrammarAndSpellingData.Error {
     func offset(by delta: Int) -> GrammarAndSpellingData.Error {
         var error = self
         error.offset = offset + delta
+        return error
+    }
+
+    func length(by delta: Int) -> GrammarAndSpellingData.Error {
+        var error = self
+        error.length = length + delta
         return error
     }
     

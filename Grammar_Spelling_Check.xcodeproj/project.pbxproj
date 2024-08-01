@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		001D47E82C5536F300BF7A63 /* GrammarSpellingLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001D47E72C5536F300BF7A63 /* GrammarSpellingLabel.swift */; };
+		00ACD80D2C5BA6E3005B9987 /* ErrorURLBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ACD80C2C5BA6E3005B9987 /* ErrorURLBuilder.swift */; };
 		00B66ED82AC197CC0062F32C /* Grammar_Spelling_CheckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B66ED72AC197CC0062F32C /* Grammar_Spelling_CheckApp.swift */; };
 		00B66EDA2AC197CC0062F32C /* GrammarAndSpellingCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B66ED92AC197CC0062F32C /* GrammarAndSpellingCheckView.swift */; };
 		00B66EDC2AC197CE0062F32C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 00B66EDB2AC197CE0062F32C /* Assets.xcassets */; };
@@ -25,6 +26,7 @@
 
 /* Begin PBXFileReference section */
 		001D47E72C5536F300BF7A63 /* GrammarSpellingLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrammarSpellingLabel.swift; sourceTree = "<group>"; };
+		00ACD80C2C5BA6E3005B9987 /* ErrorURLBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorURLBuilder.swift; sourceTree = "<group>"; };
 		00B66ED42AC197CC0062F32C /* Grammar_Spelling_Check.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Grammar_Spelling_Check.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		00B66ED72AC197CC0062F32C /* Grammar_Spelling_CheckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grammar_Spelling_CheckApp.swift; sourceTree = "<group>"; };
 		00B66ED92AC197CC0062F32C /* GrammarAndSpellingCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrammarAndSpellingCheckView.swift; sourceTree = "<group>"; };
@@ -129,6 +131,7 @@
 				00B66ED92AC197CC0062F32C /* GrammarAndSpellingCheckView.swift */,
 				00B66F262AC31E720062F32C /* Extension.swift */,
 				001D47E72C5536F300BF7A63 /* GrammarSpellingLabel.swift */,
+				00ACD80C2C5BA6E3005B9987 /* ErrorURLBuilder.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -204,6 +207,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				00B66F272AC31E720062F32C /* Extension.swift in Sources */,
+				00ACD80D2C5BA6E3005B9987 /* ErrorURLBuilder.swift in Sources */,
 				00B66F252AC3182C0062F32C /* ErrorPopupView.swift in Sources */,
 				00B66EDA2AC197CC0062F32C /* GrammarAndSpellingCheckView.swift in Sources */,
 				00B66F292AC4848A0062F32C /* SelectedLabel.swift in Sources */,
