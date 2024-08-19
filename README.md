@@ -43,7 +43,24 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
   #  - Marking: 
   / Разметка /
   
-     <img width="727" alt="Снимок экрана 2024-08-01 в 14 41 27" src="https://github.com/user-attachments/assets/3df7f027-436f-4788-85f5-66f70658aa9f">
+     `errors
+    .forEach { error in
+        let color: UIColor
+        if error.type == "grammar" {
+            color = UIColor(red: 1, green: 0.38, blue: 0.53, alpha: 0.1)
+        } else if error.type == "spelling" {
+            color = UIColor(red: 0.24, green: 0.29, blue: 0.85, alpha: 0.1)
+        } else {
+            return
+        }
+        let range = NSRange(location: error.offset, length: error.length)
+        attributedString.addAttribute(.backgroundColor, value: color, range: range)
+        attributedString.addAttribute(
+            .link,
+            value: ErrorURLBuilder(errorId: error.id).url,
+            range: range
+        )
+    }`
 
    # - Deeplink generator:
    / Deeplink генератор /
