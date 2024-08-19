@@ -37,13 +37,12 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
    # Solution:
    / Решение /
    
-     Similar to Deeplink mechanism, which has expansion capabilities. 
-     / Подобие Deeplink механизма, который имеет возможности расширения. /
+   Similar to Deeplink mechanism, which has expansion capabilities. 
+   / Подобие Deeplink механизма, который имеет возможности расширения. /
    
   #  - Marking: 
   / Разметка /
   
-     ```
      errors
     .forEach { error in
         let color: UIColor
@@ -62,7 +61,6 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
             range: range
         )
     }
-    ```
 
    # - Deeplink generator:
    / Deeplink генератор /
