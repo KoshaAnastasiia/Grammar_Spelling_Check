@@ -43,7 +43,8 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
   #  - Marking: 
   / Разметка /
   
-     `errors
+     ```
+     errors
     .forEach { error in
         let color: UIColor
         if error.type == "grammar" {
@@ -60,12 +61,48 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
             value: ErrorURLBuilder(errorId: error.id).url,
             range: range
         )
-    }`
+    }
+    ```
 
    # - Deeplink generator:
    / Deeplink генератор /
-  
-     <img width="736" alt="Снимок экрана 2024-08-01 в 14 42 32" src="https://github.com/user-attachments/assets/a0a5968e-5289-4f01-affe-91281abe7d6e">
+   
+  ```
+struct ErrorURLBuilder {
+    private static let baseURL = URL(string: "check://openError")!
+    
+    let errorId: String
+    private static let errorIdKey = "id"
+    
+    private var queryItems: [URLQueryItem] {
+        [
+            .init(name: Self.errorIdKey, value: errorId)
+        ]
+    }
+
+    var url: URL {
+        var components = URLComponents(string: Self.baseURL.absoluteString)!
+        components.queryItems = queryItems
+        return components.url!
+    }
+
+    init(errorId: String) {
+        self.errorId = errorId
+    }
+
+    init?(url: URL) {
+        guard
+            Self.baseURL.scheme == url.scheme,
+            Self.baseURL.host == url.host,
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
+            let errorId = components.queryItems?.first(where: { $0.name == "id" })?.value
+        else {
+            return nil
+        }
+        self.errorId = errorId
+    }
+}
+```
 
 # ! It was important to leave the ability to edit the text after highlighting errors:
 / Важно было оставить возможность редактирования текста после выделения ошибок /
@@ -79,12 +116,54 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
   # - A structure that describes an update from the user: 
   / Структура которая описывает обновление от пользователя /
   
-<img width="523" alt="Снимок экрана 2024-08-01 в 14 54 29" src="https://github.com/user-attachments/assets/c0ea7ad2-5e47-4f54-ac2f-2d18afc70bf3">
+```
+private struct TextUpdate: CustomDebugStringConvertible {
+    let range: NSRange
+    let updateWith: String
+    let text: String
+}
+
+private func chooseUpdate() -> Bool {
+    defer {
+        pendingTextUpdates = []
+    }
+    guard let valid = pendingTextUpdates.first (where: {
+        $0.text.count - $0.range.length + $0.updateWith.count == inputText.string.count
+    }) else {
+        print("no valid update")
+        return false
+    }
+    print("take update: \(valid)")
+    makeUpdate(pendingTextUpdate: valid)
+    return true
+}
+```
 
   # - Applying updates: 
   / Применение обновлений /
   
-<img width="523" alt="Снимок экрана 2024-08-01 в 14 57 12" src="https://github.com/user-attachments/assets/4de8a242-ef17-446c-ba65-1119c0effede">
+```
+private struct TextUpdate: CustomDebugStringConvertible {
+    let range: NSRange
+    let updateWith: String
+    let text: String
+}
+
+private func chooseUpdate() -> Bool {
+    defer {
+        pendingTextUpdates = []
+    }
+    guard let valid = pendingTextUpdates.first (where: {
+        $0.text.count - $0.range.length + $0.updateWith.count == inputText.string.count
+    }) else {
+        print("no valid update")
+        return false
+    }
+    print("take update: \(valid)")
+    makeUpdate(pendingTextUpdate: valid)
+    return true
+}
+```
 
 # 3. After editing the text by the user, it is necessary to recalculate all locations of errors in the text.
 / После редактирования текста пользователем необходимо пересчитать все расположения ошибок в тексте. /
@@ -95,7 +174,55 @@ https://github.com/user-attachments/assets/0508823c-9a3a-4edf-b8d2-8d670da188b0
  # Depending on the location of the change and the size of the text, different recalculation logic is used
  / В зависимости от места изменения и размера текста используется разная логика пересчета /
  
-<img width="533" alt="Снимок экрана 2024-08-01 в 15 04 55" src="https://github.com/user-attachments/assets/9157f378-c1e3-47bd-8917-e53bdca28e9b">
+```
+errors = errors.compactMap {
+    let isUpdateFullyRightFromError = $0.offset + $0.length < pendingTextUpdate.range.location
+    if isUpdateFullyRightFromError {
+        return $0
+    }
+    let isUpdateFullyLeftFromError = pendingTextUpdate.range.location + pendingTextUpdate.range.length < $0.offset
+    if isUpdateFullyLeftFromError {
+        let deltaLength = pendingTextUpdate.updateWith.count - pendingTextUpdate.range.length
+        return $0.offset(by: deltaLength)
+    }
+    let isUpdateFullyInsideError = pendingTextUpdate.range.lowerBound > $0.offset && pendingTextUpdate.range.upperBound < $0.offset + $0.length
+    if isUpdateFullyInsideError {
+        let deltaLength = pendingTextUpdate.updateWith.count - pendingTextUpdate.range.length
+        return $0.length(by: deltaLength)
+    }
+    var errorRange = NSRange(location: $0.offset, length: $0.length)
+    guard let intersection = pendingTextUpdate.range.intersection(errorRange) else {
+        return $0
+    }
+    // Clipping lenth of interval by substracting intersection
+    errorRange.length = errorRange.length - intersection.length
+    let isErrorStartInsideUpdateInterval = intersection.lowerBound == errorRange.lowerBound
+    if isErrorStartInsideUpdateInterval {
+        // Clipping the start of error range by setting start of error range equal to intersection end
+        errorRange.location = intersection.upperBound
+    }
+    return $0.applying(range: errorRange)
+}
 
- <img width="521" alt="Снимок экрана 2024-08-01 в 15 05 59" src="https://github.com/user-attachments/assets/3cb8a784-120a-46ee-9e43-fe1565077579">
-
+extension GrammarAndSpellingData.Error {
+    func offset(by delta: Int) -> GrammarAndSpellingData.Error {
+        var error = self
+        error.offset = offset + delta
+        return error
+    }
+    func length(by delta: Int) -> GrammarAndSpellingData.Error {
+        var error = self
+        error.length = length + delta
+        return error
+    }
+    func applying(range: NSRange) -> GrammarAndSpellingData.Error? {
+        guard range.length > 0 else {
+            return nil
+        }
+        var error = self
+        error.offset = range.location
+        error.length = range.length
+        return error
+    }
+}
+```
